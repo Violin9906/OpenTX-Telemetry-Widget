@@ -24,7 +24,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 
 	-- Pitch calculation
 	if data.pitchRoll then
-		pitch = ((math.abs(data.roll) > 900 and -1 or 1) * (270 - data.pitch * 0.1) % 180) - 90
+		pitch = ((math.abs(data.roll) > 900 and -1 or 1) * (90 + data.pitch * 0.1) % 180) - 90
 	else
 		pitch = math.deg(math.atan2(data.accx * (data.accz >= 0 and -1 or 1), math.sqrt(data.accy * data.accy + data.accz * data.accz))) * -1
 	end

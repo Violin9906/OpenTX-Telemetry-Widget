@@ -92,7 +92,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 
 	-- Calculate orientation
 	if data.pitchRoll then
-		pitch = (abs(data.roll) > 900 and -1 or 1) * (270 - data.pitch * 0.1) % 180
+		pitch = (abs(data.roll) > 900 and -1 or 1) * (90 + data.pitch * 0.1) % 180
 		roll = (270 - data.roll * 0.1) % 180
 		upsideDown = abs(data.roll) > 900
 	else
