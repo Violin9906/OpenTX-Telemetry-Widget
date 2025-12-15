@@ -585,12 +585,12 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		if data.tpwr then
 		   text(RIGHT_POS, TOP, data.tpwr .. "mW", data.set_flags(RIGHT + MIDSIZE, telemCol))
 		end
-		text(RIGHT_POS + 1, TOP + 28, data.satellites % 100, data.set_flags(MIDSIZE + RIGHT, telemCol))
+		text(RIGHT_POS + 1, TOP + 28, data.satellites, data.set_flags(MIDSIZE + RIGHT, telemCol))
 	else
 		tmp = ((data.armed or data.modeId == 6) and data.hdop < 11 - config[21].v * 2) or not data.telem
 		text(X3 + 48, TOP, (data.hdop == 0 and not data.gpsFix) and "-- --" or (9 - data.hdop) * 0.5 + 0.8, data.set_flags(MIDSIZE + RIGHT, (tmp and RED or data.TextColor)))
 		text(X3 + 11, TOP + 24, "HDOP", data.set_flags(SMLSIZE, data.TextColor))
-		text(RIGHT_POS + 1, TOP, data.satellites % 100, data.set_flags(MIDSIZE + RIGHT, telemCol))
+		text(RIGHT_POS + 1, TOP, data.satellites, data.set_flags(MIDSIZE + RIGHT, telemCol))
 	end
 	hdopGraph(X3 + 65, TOP + (data.crsf and 51 or 23))
 	tmp = RIGHT + ((not data.telem or not data.gpsFix) and RED or data.TextColor)

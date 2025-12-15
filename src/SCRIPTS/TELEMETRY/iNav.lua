@@ -105,26 +105,26 @@ function inav.background()
 		end
 		if data.crsf then
 			crsf(data)
-		else
-			data.heading = getValue(data.hdg_id)
-			if data.fpv_id > -1 then data.fpv = getValue(data.fpv_id) * 0.1 end
-			if data.pitchRoll then
-				data.pitch = getValue(data.pitch_id)
-				data.roll = getValue(data.roll_id)
-			else
-				data.accx = getValue(data.accx_id)
-				data.accy = getValue(data.accy_id)
-				data.accz = getValue(data.accz_id)
-			end
-			data.mode = getValue(data.mode_id)
-			data.rxBatt = getValue(data.rxBatt_id)
-			data.gpsAlt = data.satellites > 1000 and getValue(data.gpsAlt_id) or 0
-			data.distance = getValue(data.dist_id)
-			data.distanceMax = getValue(data.distMax_id)
+		-- else
+		-- 	data.heading = getValue(data.hdg_id)
+		-- 	if data.fpv_id > -1 then data.fpv = getValue(data.fpv_id) * 0.1 end
+		-- 	if data.pitchRoll then
+		-- 		data.pitch = getValue(data.pitch_id)
+		-- 		data.roll = getValue(data.roll_id)
+		-- 	else
+		-- 		data.accx = getValue(data.accx_id)
+		-- 		data.accy = getValue(data.accy_id)
+		-- 		data.accz = getValue(data.accz_id)
+		-- 	end
+		-- 	data.mode = getValue(data.mode_id)
+		-- 	data.rxBatt = getValue(data.rxBatt_id)
+		-- 	data.gpsAlt = data.satellites >= 6 and getValue(data.gpsAlt_id) or 0
+		-- 	data.distance = getValue(data.dist_id)
+		-- 	data.distanceMax = getValue(data.distMax_id)
 		end
 		data.vspeed = getValue(data.vspeed_id)
 		data.altitude = getValue(data.alt_id)
-		if data.alt_id == -1 and data.gpsAltBase and data.gpsFix and data.satellites > 3000 then
+		if data.alt_id == -1 and data.gpsAltBase and data.gpsFix and data.satellites >= 6 then
 			data.altitude = data.gpsAlt - data.gpsAltBase
 		end
 		data.speed = getValue(data.speed_id)
@@ -150,7 +150,7 @@ function inav.background()
 	-- Log playback
 	if data.doLogs then
 		-- Checking if it's really armed
-		if data.rssi > 0 and bit32.band(data.mode % 10, 4) == 4 then
+		if data.rssi > 0 and data.armed then
 			-- Armed, kill playback
 			endLog()
 		else
@@ -184,7 +184,7 @@ function inav.background()
 		data.gpsFix = false
 		if type(gpsTemp) == "table" and gpsTemp.lat ~= nil and gpsTemp.lon ~= nil then
 			data.gpsLatLon = gpsTemp
-			if data.satellites > 1000 and gpsTemp.lat ~= 0 and gpsTemp.lon ~= 0 then
+			if data.satellites >= 6 and gpsTemp.lat ~= 0 and gpsTemp.lon ~= 0 then
 				data.gpsFix = true
 				data.lastLock = gpsTemp
 				if data.gpsHome ~= false and distCalc ~= nil then
@@ -206,44 +206,85 @@ function inav.background()
 	local preArmMode = false
 	data.modeId = 1 -- No telemetry
 	if data.telem then
-		data.armed = false
 		data.headFree = false
 		data.headingHold = false
 		data.altHold = false
-		local modeA = data.mode * 0.0001
-		local modeB = data.mode * 0.001 % 10
-		local modeC = data.mode * 0.01 % 10
-		local modeD = data.mode * 0.1 % 10
-		local modeE = data.mode % 10
-		if bit32.band(modeD, 2) == 2 then
-			data.modeId = 2 -- Horizon
-		elseif bit32.band(modeD, 1) == 1 then
-			data.modeId = 3 -- Angle
+
+		data.armed = true
+		if string.sub(data.fm, -1) == "*" then
+			data.armed = false
+			data.fm = string.sub(data.fm, 1, -2)
+		end
+
+		if data.fm == "Stabilized" then
+			data.modeId = 2
+		elseif data.fm == "Offboard" then
+			data.modeId = 3
+		elseif data.fm == "Acro" then
+			data.modeId = 4
+		elseif data.fm == "ChecksFail" then
+			data.modeId = 5
+		elseif data.fm == "Ready" then
+			data.modeId = 6
+		elseif data.fm == "Position" then
+			data.modeId = 7
+		elseif data.fm == "Mission" then
+			data.modeId = 8
+		elseif data.fm == "Manual" then
+			data.modeId = 9
+		elseif data.fm == "Return" then
+			data.modeId = 10
+		elseif data.fm == "Failsafe" then
+			data.modeId = 11
+		elseif data.fm == "Throttle" then
+			data.modeId = 12
+		elseif data.fm == "Auto" then
+			data.modeId = 13
+		elseif data.fm == "Altitude" then
+			data.modeId = 14
+		elseif data.fm == "Failure" then
+			data.modeId = 16
+		elseif data.fm == "Terminate" then
+			data.modeId = 17
 		else
-			data.modeId = 4 -- Acro
+			data.modeId = 15
 		end
-		data.headFree = bit32.band(modeB, 4) == 4
-		data.headingHold = bit32.band(modeC, 1) == 1
-		if bit32.band(modeE, 4) == 4 then
-			data.armed = true
-			data.altHold = (bit32.band(modeC, 2) == 2 or bit32.band(modeC, 4) == 4)
-			homeReset = data.satellites >= 4000
-			data.modeId = bit32.band(modeC, 4) == 4 and 7 or data.modeId -- Pos hold
-		else
-			preArmMode = data.modeId
-			data.modeId = (bit32.band(modeE, 2) == 2 or modeE == 0) and (data.throttle > -920 and 12 or 5) or 6 -- Not OK to arm(5) / Throttle warning(12) / Ready to fly(6)
-		end
-		if bit32.band(modeA, 4) == 4 then
-			data.modeId = 11 -- Failsafe
-		elseif bit32.band(modeB, 1) == 1 then
-			data.modeId = 10 -- RTH
-		elseif bit32.band(modeD, 4) == 4 then
-			data.modeId = 9 -- Manual
-		elseif bit32.band(modeB, 2) == 2 then
-			data.modeId = 8 -- Waypoint
-		elseif bit32.band(modeB, 8) == 8 then
-			data.modeId = 13 -- Cruise
-		end
+		
+
+		-- local modeA = data.mode * 0.0001
+		-- local modeB = data.mode * 0.001 % 10
+		-- local modeC = data.mode * 0.01 % 10
+		-- local modeD = data.mode * 0.1 % 10
+		-- local modeE = data.mode % 10
+		-- if bit32.band(modeD, 2) == 2 then
+		-- 	data.modeId = 2 -- Horizon
+		-- elseif bit32.band(modeD, 1) == 1 then
+		-- 	data.modeId = 3 -- Angle
+		-- else
+		-- 	data.modeId = 4 -- Acro
+		-- end
+		-- data.headFree = bit32.band(modeB, 4) == 4
+		-- data.headingHold = bit32.band(modeC, 1) == 1
+		-- if bit32.band(modeE, 4) == 4 then
+		-- 	data.armed = true
+		-- 	data.altHold = (bit32.band(modeC, 2) == 2 or bit32.band(modeC, 4) == 4)
+		-- 	homeReset = data.satellites >= 6
+		-- 	data.modeId = bit32.band(modeC, 4) == 4 and 7 or data.modeId -- Pos hold
+		-- else
+		-- 	preArmMode = data.modeId
+		-- 	data.modeId = (bit32.band(modeE, 2) == 2 or modeE == 0) and (data.throttle > -920 and 12 or 5) or 6 -- Not OK to arm(5) / Throttle warning(12) / Ready to fly(6)
+		-- end
+		-- if bit32.band(modeA, 4) == 4 then
+		-- 	data.modeId = 11 -- Failsafe
+		-- elseif bit32.band(modeB, 1) == 1 then
+		-- 	data.modeId = 10 -- RTH
+		-- elseif bit32.band(modeD, 4) == 4 then
+		-- 	data.modeId = 9 -- Manual
+		-- elseif bit32.band(modeB, 2) == 2 then
+		-- 	data.modeId = 8 -- Waypoint
+		-- elseif bit32.band(modeB, 8) == 8 then
+		-- 	data.modeId = 13 -- Cruise
+		-- end
 	end
 
 	-- Voice alerts
@@ -272,20 +313,25 @@ function inav.background()
 		end
 		playAudio("engdrm", 1)
 	end
-	if data.gpsFix ~= data.gpsFixPrev and modeIdPrev ~= 12 and data.modeId ~= 12 then -- GPS status change
+	if data.gpsFix ~= data.gpsFixPrev then -- GPS status change
 		playAudio("gps", not data.gpsFix and 1 or nil)
 		playAudio(data.gpsFix and "good" or "lost", not data.gpsFix and 1 or nil)
 	end
 	if modeIdPrev ~= data.modeId then -- New flight mode
-		if data.armed and modes[data.modeId].w ~= nil then
+		if modes[data.modeId].w ~= nil then
 			playAudio(modes[data.modeId].w, modes[data.modeId].f > 0 and 1 or nil)
-		elseif not data.armed and data.modeId == 6 and (modeIdPrev == 5 or modeIdPrev == 12) then
-			playAudio(modes[data.modeId].w)
 		end
+		-- if data.armed and modes[data.modeId].w ~= nil then
+		-- 	playAudio(modes[data.modeId].w, modes[data.modeId].f > 0 and 1 or nil)
+		-- elseif not data.armed and data.modeId == 6 and (modeIdPrev == 5 or modeIdPrev == 12) then
+		-- 	playAudio(modes[data.modeId].w)
+		-- end
 	elseif preArmMode ~= false and data.preArmModePrev ~= preArmMode then
 		playAudio(modes[preArmMode].w)
 	end
-	data.hdop = math.floor(data.satellites * 0.01) % 10
+	-- data.hdop = math.floor(data.satellites * 0.01) % 10
+	-- Fake HDOP based on satellite lock count
+	data.hdop = math.floor(math.min(data.satellites + 10, 25) * 0.36 + 0.5)
 	if data.headingHold ~= headingHoldPrev then -- Heading hold status change
 		playAudio("hedhld")
 		playAudio(data.headingHold and "active" or "off")

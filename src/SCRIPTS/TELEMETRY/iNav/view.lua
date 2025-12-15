@@ -57,7 +57,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	end
 	hdopGraph(RIGHT_POS - 30, data.crsf and 17 or 9, SMLSIZE, (SMLCD or config[35].v == 1))
 	icons.gps(RIGHT_POS - 17, data.crsf and 17 or 9)
-	text(RIGHT_POS - (data.telem and 0 or 1), data.crsf and 17 or 9, data.satellites % 100, SMLSIZE + RIGHT + telemFlag)
+	text(RIGHT_POS - (data.telem and 0 or 1), data.crsf and 17 or 9, data.satellites, SMLSIZE + RIGHT + telemFlag)
 
 	-- Directionals
 	if data.showHead and data.startup == 0 then
