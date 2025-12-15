@@ -26,10 +26,10 @@ local function fake(data, config, record, label, toNum)
       data.fuel = math.max(math.min(math.floor((1 - (data.fuel) / config[27].v) * 100 + 0.5), 100), 0)
    end
    -- Don't know the flight mode with Crossfire, so assume armed and ACRO
-   data.mode = 5
+   -- data.mode = 5
    data.satellites = toNum(record[label.sats])
    --Fake HDOP based on satellite lock count and assume GPS fix when there's at least 6 satellites
-   data.satellites = data.satellites + (math.floor(math.min(data.satellites + 10, 25) * 0.36 + 0.5) * 100) + (data.satellites >= 6 and 3000 or 0)
+   -- data.satellites = data.satellites + (math.floor(math.min(data.satellites + 10, 25) * 0.36 + 0.5) * 100) + (data.satellites >= 6 and 3000 or 0)
 end
 
 return fake

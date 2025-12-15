@@ -132,7 +132,7 @@ local function playLog(data, config, distCalc, date)
 	 -- Fake telemetry that's similar on Crossfire and S.Port
 	 data.time = string.sub(record[label.time], 0, 8)
 	 data.altitude = toNum(record[label.alt])
-	 if data.alt_id == -1 and data.gpsAltBase and data.gpsFix and data.satellites > 3000 then
+	 if data.alt_id == -1 and data.gpsAltBase and data.gpsFix and data.satellites >= 6 then
 	    data.altitude = data.gpsAlt - data.gpsAltBase
 	 end
 	 data.speed = toNum(record[label.gspd])

@@ -84,7 +84,7 @@ local function title()
 	   flags = data.set_flags(0, data.TextColor)
 	   rect(0, 30, 75, (22 * (data.crsf and 1 or 2)) + 14, flags)
 	   text(4, 37, "Sats:", flags)
-	   text(72, 37, data.satellites % 100, data.set_flags(RIGHT, tmp))
+	   text(72, 37, data.satellites, data.set_flags(RIGHT, tmp))
 	   if not data.crsf then
 	      text(4, 59, "DOP:", data.set_flags(0, data.TextColor))
 	      text(72, 59, (data.hdop == 0 and not data.gpsFix) and "---" or (9 - data.hdop) * 0.5 + 0.8, data.set_flags(RIGHT, tmp))
